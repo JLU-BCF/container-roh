@@ -1,0 +1,34 @@
+---
+
+# Setup Routing-on-Host
+
+# assert that interfaces are configured
+
+- name: check ROH interfaces
+  assert:
+    that: roh_interfaces|length > 0
+
+# setup the local dummy intefrace
+- name: Create roh host interface
+  community.general.nmcli:
+    type: dummy
+    conn_name: roh-host
+    state: present
+    ip4: "{{ data_ip_address}}/32"
+
+- name: set mtu for roh host
+  community.general.nmcli:
+    type: dummy
+    conn_name: roh-host
+    state: present
+    mtu: "{{ fabric_mtu }}"
+    ip4: "{{ data_ip_address}}/32"
+
+# setup the actual interfaces
+- include_tasks: "interfaces_dhcp.yaml"
+  when: use_dhcp
+- include_tasks: "interfaces_bgp.yaml"
+  when: not use_dhcp
+
+# configure frr for routing
+- include_tasks: "frr.yml"

@@ -1,0 +1,16 @@
+---
+
+# setup roh interfaces for dhcp
+
+# nmcli module is not able to reset ip addresses...
+- name: configure roh interfaces for dhcp
+  template:
+    src: interface_dhcp.j2
+    dest: "/etc/NetworkManager/system-connections/{{ item }}.nmconnection"
+    owner: root
+    group: root
+    mode: 0600
+  loop: "{{ roh_interfaces }}"
+  notify:
+    - restart nm
+

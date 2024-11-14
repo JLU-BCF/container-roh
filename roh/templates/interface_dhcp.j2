@@ -1,0 +1,17 @@
+[connection]
+id={{ item }}
+type=ethernet
+interface-name={{ item }}
+
+[ethernet]
+mtu=9000
+
+[ipv4]
+method=auto
+never-default=true
+
+[ipv6]
+addr-gen-mode=default
+method=link-local
+
+[proxy]

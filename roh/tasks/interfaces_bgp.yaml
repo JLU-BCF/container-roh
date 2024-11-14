@@ -1,0 +1,24 @@
+---
+
+# setup interface for bgp unnumbered. only ipv6 ll is needed
+
+- name: configure roh interfaces for bgp unnumbered
+  community.general.nmcli:
+    type: ethernet
+    conn_name: "{{ item }}"
+    state: present
+    method4: disabled
+    method6: link-local
+    never_default4: true
+  loop: "{{ roh_interfaces }}"
+  when: not use_dhcp
+
+- name: set mtu on roh interfaces for bgp unnumbered
+  community.general.nmcli:
+    type: ethernet
+    conn_name: "{{ item }}"
+    state: present
+    mtu: "{{ fabric_mtu }}"
+    never_default4: true
+  loop: "{{ roh_interfaces }}"
+  when: not use_dhcp

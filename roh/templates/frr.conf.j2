@@ -1,0 +1,65 @@
+frr defaults datacenter
+hostname {{ inventory_hostname }}
+log syslog
+!
+{% for int in roh_interfaces %}
+interface {{ int }}
+  no ipv6 nd suppress-ra
+exit
+{% endfor %}
+!
+router bgp {{ data_as }}
+ bgp router-id {{ data_ip_address }}
+ bgp bestpath as-path multipath-relax
+ bgp bestpath compare-routerid
+ no bgp network import-check
+ timers bgp {{ bgp_keepalive }} {{ bgp_hold }}
+ neighbor {{ uplink_peer_group_name }} peer-group
+ neighbor {{ uplink_peer_group_name }} remote-as external
+ neighbor {{ uplink_peer_group_name }} timers connect 2
+ neighbor {{ uplink_peer_group_name }} password {{ bgp_server_password }}
+ {% if use_dhcp %}
+ {% for dest in legacy_bgp_peers %}
+ neighbor {{ dest.ip }} remote-as {{ dest.as }}
+ neighbor {{ dest.ip }} timers connect 2
+ neighbor {{ dest.ip }} password {{ bgp_server_password }}
+ {% endfor %}
+ {% else %}
+ neighbor {{ uplink_peer_group_name }} peer-group
+ neighbor {{ uplink_peer_group_name }} remote-as external
+ neighbor {{ uplink_peer_group_name }} timers connect 2
+ neighbor {{ uplink_peer_group_name }} password {{ bgp_server_password }}
+ {% for int in roh_interfaces %}
+ neighbor {{ int }} interface peer-group {{ uplink_peer_group_name }}
+ {% endfor %}
+ {% endif %}
+ 
+ address-family ipv4 unicast
+  network {{ data_ip_address }}/32
+  {% if use_dhcp %}
+  {% for dest in legacy_bgp_peers %}
+  neighbor {{ dest.ip }} allowas-in
+  neighbor {{ dest.ip }} prefix-list all-but-default in
+  neighbor {{ dest.ip }} prefix-list local-only out
+  neighbor {{ dest.ip }} soft-reconfiguration inbound
+  {% endfor %}
+  {% else %}
+  neighbor {{ uplink_peer_group_name }} allowas-in
+  neighbor {{ uplink_peer_group_name }} prefix-list all-but-default in
+  neighbor {{ uplink_peer_group_name }} prefix-list local-only out
+  neighbor {{ uplink_peer_group_name }} soft-reconfiguration inbound
+  {% endif %}
+  maximum-paths 2
+ exit-address-family
+exit
+!
+ip prefix-list all-but-default seq 5 deny 0.0.0.0/0
+ip prefix-list all-but-default seq 10 permit any
+ip prefix-list local-only seq 5 permit {{ data_ip_address }}/32
+ip prefix-list local-only seq 10 deny any
+!
+route-map SET_SOURCE permit 10
+  set src {{ data_ip_address }}
+!
+ip protocol bgp route-map SET_SOURCE
+!

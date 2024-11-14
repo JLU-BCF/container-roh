@@ -1,0 +1,2 @@
+[Service]
+ExecStartPost=/sbin/ping -c 1 -w {{ roh_ping_timeout }} {{ roh_ping_target }}

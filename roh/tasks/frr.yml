@@ -1,0 +1,96 @@
+---
+
+# install the FRR daemon and manage its configuration
+
+- name: install frr repo
+  become: true
+  yum:
+    name: https://rpm.frrouting.org/repo/frr-9-repo-1-0.el9.noarch.rpm
+    update_cache: true
+    state: present
+    disable_gpg_check: true
+  environment:
+    https_proxy: "{{ proxy | default() }}"
+  when: ansible_facts['distribution'] != 'Debian' and ansible_facts['distribution'] != 'Ubuntu'
+
+- name: remove unwanted frr 10...
+  become: true
+  yum:
+    name: frr-stable-repo
+    update_cache: true
+    state: absent
+    disable_gpg_check: true
+  environment:
+    https_proxy: "{{ proxy | default() }}"
+  when: ansible_facts['distribution'] != 'Debian' and ansible_facts['distribution'] != 'Ubuntu'
+
+- name: install frr package
+  become: true
+  package:
+    name:
+    - "frr-{{frr_version}}"
+    - frr-pythontools
+    state: present
+    allow_downgrade: true
+
+
+- name: enable bgpd
+  become: true
+  community.general.ini_file:
+    path: /etc/frr/daemons
+    section: null
+    option: bgpd
+    value: "yes"
+    no_extra_spaces: true
+  notify:
+    - restart frr
+  
+- name: set namespace for frr
+  become: true
+  community.general.ini_file:
+    path: /etc/frr/daemons
+    section: null
+    option: watchfrr_options
+    value: ""
+    no_extra_spaces: true
+
+- name: configure bgp
+  become: true
+  template:
+    src: frr.conf.j2
+    dest: /etc/frr/frr.conf
+    owner: frr
+    group: frr
+    mode: 0600
+  notify:
+    - restart frr
+
+- name: create frr.service override directory
+  file:
+    owner: root
+    group: root
+    mode: 0755
+    path: /etc/systemd/system/frr.service.d
+    state: directory
+
+- name: setup ping sentinel
+  become: true
+  template:
+    src: frr_override.conf.j2
+    dest: /etc/systemd/system/frr.service.d/override.conf
+    owner: root
+    group: root
+    mode: 0644
+  when:
+    - roh_ping_target is defined
+    - roh_ping_timeout is defined
+  notify: 
+    - reload frr  
+
+
+- name: enable frr service
+  become: true
+  service:
+    name: frr
+    enabled: true
+    state: started

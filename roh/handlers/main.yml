@@ -1,0 +1,19 @@
+---
+
+# handle frr start/restart
+- name: restart frr
+  service:
+    name: frr
+    state: restarted
+
+# handle frr reload
+- name: reload frr
+  service:
+    name: frr
+    state: reload
+
+# handle NM start/restart
+- name: restart nm
+  service:
+    name: NetworkManager
+    state: restarted

@@ -1,0 +1,14 @@
+# MTU for dummy interfaces / routing links
+fabric_mtu: 9000
+
+# use DHCP based configuration
+use_dhcp: false
+
+# name of the peer group in FRR configuration for uplink switches
+uplink_peer_group_name: switches
+
+# BGP AS for the data hosts
+data_as: 65420
+
+# newer frr version have problems with network manager..
+frr_version: 9.1.1
