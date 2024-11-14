@@ -99,4 +99,17 @@ The legacy_bgp_peers setting may contain the address and BGP AS of all BGP peers
 Depending on the network setup this can either be a global or host based setting. Both items have to be present; in this case ping is run as a post start command and tries to ping the given target host once. If no reploy is received within the timeout, ping will fail.
 
 
+# Switch configuration
+The actual switch configuration is beyond the scope of the repository. It depends on the vendor and model of the switches used, and might require additional items not covered here.
+
+The following check list can be used as a starting point:
+
+  * enable BGP
+  * set an individual BGP AS per switch (can be private AS number)
+  * use short keepalive timeouts or BFD for failure detection
+  * create a BGP peer group with the "data_as" AS and the "bgp_server_password" as MD5 password
+    (some switches might allow any external AS in peer group instead)
+  * add all interface with unnumbered connections to the peer group
+  * ensure that these interface are configured for routing, IPv6, the correct MTU etc.
+  * you might need additional BGP peers for uplink connectivity
 
